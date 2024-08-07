@@ -4,12 +4,14 @@
  */
 package com.mycompany.mfqs;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author Hp
  */
 public class Process {
-    static Process process[];
+    static ArrayList<Process> processList = new ArrayList<>();
     
     private final int processId;
     private final int arrivalTime;
@@ -45,9 +47,13 @@ public class Process {
         return priority;
     }
     
-    public static void printArray(){
-        for(int i = 0; i < process.length; i++){
-            System.out.print(process[i].getProcessId() +" ");
+    
+    
+    public static void printProcessArray() {
+        System.out.print("Processes on Array: ");
+        for (Process process : processList) {
+            System.out.print(process.getProcessId() + " ");
         }
+        System.out.println();
     }
 }

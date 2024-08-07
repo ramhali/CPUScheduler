@@ -1,5 +1,7 @@
 com\mycompany\mfqs\Main.class
 com\mycompany\mfqs\MFQS.class
-com\mycompany\mfqs\Process.class
-com\mycompany\mfqs\Queues.class
 com\mycompany\mfqs\MFQS$1.class
+com\mycompany\mfqs\Queues$2.class
+com\mycompany\mfqs\Process.class
+com\mycompany\mfqs\Queues$1.class
+com\mycompany\mfqs\Queues.class

@@ -4,8 +4,12 @@
 
 package com.mycompany.mfqs;
 
+import static com.mycompany.mfqs.Process.processList;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
 
@@ -26,26 +30,30 @@ public class MFQS {
 //        Queues.printProcesses();
         System.out.println(pNumber +" Processes!");
         generateProcess(pNumber);        
-        Process.printArray();
+        Process.printProcessArray();
         arrangeProcess();
         System.out.println("Arranged Process based on Arrival Time: ");
-        Process.printArray();
+        Process.printProcessArray();
         
         System.out.println("Number of Queues: ");
         int qNumber = scanner.nextInt();
         
         Queues.initializeQueues(qNumber);
         generateQueues(qNumber);
-        Queues.printQueues();
         
-        Queues.addProcessToQueue(0, Process.process[0]);
+        System.out.println("Where the Processes will Enter (Entry Queue [0-n]): ");
+        int entryQueue = scanner.nextInt();
         
-        Queues.printProcesses();
+        System.out.println("Priority Policy (1 - Higher Before Lower; 2 - Fixed Time Slots): ");
+        int priorityPolicy = scanner.nextInt();
+        
+        startSimulator(entryQueue, priorityPolicy);
+        
     }
     
     public static void generateProcess(int number){
         Scanner scanner = new Scanner(System.in);
-        Process.process = new Process[number];
+        
         for(int i = 1; i <= number; i++){
             System.out.println("Set Arrival Time for Process " +i +": ");
             int aTime = scanner.nextInt();
@@ -54,13 +62,13 @@ public class MFQS {
             System.out.println("Set Priority for Process " +i +": ");
             int priority = scanner.nextInt();
             
-            Process.process[i-1] = new Process(i, bTime, aTime, priority);
+            Process.processList.add(new Process(i, bTime, aTime, priority));
             
         }
     }
     
-    public static void arrangeProcess(){
-        Arrays.sort(Process.process, new Comparator<Process>() {
+    public static void arrangeProcess() {
+        Process.processList.sort(new Comparator<Process>() {
             @Override
             public int compare(Process p1, Process p2) {
                 return Integer.compare(p1.getArrivalTime(), p2.getArrivalTime());
@@ -78,4 +86,116 @@ public class MFQS {
             Queues.systemQueues[i-1] = new Queues(i, queueAlgorithm);
         }
     }
+    
+    public static void startSimulator(int entryQueue, int priorityPolicy){        
+        System.out.println("Simulator Started! ");
+        
+        if(priorityPolicy == 1){
+            higherBeforeLower(entryQueue);
+        }
+        else if(priorityPolicy == 2){
+            fixedTimeSlot(entryQueue);
+        }
+        
+        
+        Queues.printProcessesOnQueue();
+//        Process test = Queues.queue[1].poll();
+//        promoteProcess(1, test);
+//        System.out.println("After Promotion");
+//        Queues.printProcessesOnQueue();
+//        
+//        test = Queues.queue[1].poll();
+//        demoteProcess(1, test);
+//        System.out.println("After Demotion");
+//        Queues.printProcessesOnQueue();
+    }
+    
+    public static void higherBeforeLower(int entryQueue) {
+        
+        System.out.println("HIGHER BEFORE LOWER");
+        System.out.println();
+        
+        int clockTime = 1;
+        
+        while(!Process.processList.isEmpty() || !Queues.isEmpty()) {
+            System.out.println("Clock Time: " +clockTime);
+            getArrivedProcesses(entryQueue, clockTime);
+            
+            checkFromAbove();
+            
+            clockTime++;
+        }
+    }
+    
+    public static void fixedTimeSlot(int entryQueue) {
+        
+    }
+    
+    public static Process checkFromAbove(){
+        Process p;
+        
+        for (int i = 0; i < Queues.systemQueues.length; i++) {
+            if(!Queues.queue[i].isEmpty()){
+                p = Queues.queue[i].peek();
+                System.out.println("HIGHEST PRIORITY PROCESS: " +p.getProcessId() +" WITH " +p.getBurstTime() +" BURST TIME");
+                Queues.queue[i].peek().setBurstTime(Queues.queue[i].peek().getBurstTime()-1); //decrement by 1 burst time
+                
+                if(p.getBurstTime() == 0){
+                    Queues.queue[i].poll();
+                }
+                
+                return p;
+            }
+        }
+        return null;
+    }
+    
+    public static void getArrivedProcesses(int entryQueue, int clockTime) {
+        Iterator<Process> iterator = Process.processList.iterator();
+        while (iterator.hasNext()) {
+            Process process = iterator.next();
+            if (process.getArrivalTime() == clockTime) {
+                System.out.println("Process " + process.getProcessId() + " arrived!");
+                Queues.addProcessToQueue(entryQueue, process);
+                
+                if(checkWhereHighestProcess() <= entryQueue){
+                    //promotion
+                }
+                Queues.arrangeProcessesOnQueue(entryQueue);
+                
+                iterator.remove();
+                
+                
+            }
+        }
+    }
+    
+    public static int checkWhereHighestProcess() {
+         for (int i = 0; i < Queues.systemQueues.length; i++) {
+            if(!Queues.queue[i].isEmpty()){
+                return i;
+            }
+        }
+        return -1;
+    }
+    public static void promoteProcess(int currentQueue, Process p) {
+        if (currentQueue == 0) {
+            System.out.println("At Highest Queue");
+        }
+        else {
+            Process pToPromote = p;
+            Queues.addProcessToQueue(currentQueue-1, pToPromote);
+        }
+    }
+    
+    public static void demoteProcess(int currentQueue, Process p) {
+        if (currentQueue == 2) {
+            System.out.println("At Lowest Queue");
+        }
+        else {
+            Process pToDemote = p;
+            Queues.addProcessToQueue(currentQueue+1, pToDemote);
+        }
+    }
+
 }
