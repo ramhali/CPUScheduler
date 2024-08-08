@@ -115,13 +115,36 @@ public class MFQS {
         System.out.println("HIGHER BEFORE LOWER");
         System.out.println();
         
+        ArrayList<Process> processList = new ArrayList<>();
         int clockTime = 1;
         
         while(!Process.processList.isEmpty() || !Queues.isEmpty()) {
             System.out.println("Clock Time: " +clockTime);
-            getArrivedProcesses(entryQueue, clockTime);
+            getArrivedProcesses(entryQueue, clockTime); //also arranges the queue based on algorithm
             
-            checkFromAbove();
+            Process currentProcess = checkFromAbove();
+            if(currentProcess != null){
+                processList.add(currentProcess);
+            }
+            
+            if(!processList.isEmpty()){
+                System.out.println("HIGHEST PRIORITY PROCESS: " +processList.get(processList.size()-1).getProcessId() +" WITH " +processList.get(processList.size()-1).getBurstTime() +" BURST TIME LEFT");
+                
+            }
+            
+            System.out.println("DID PREEMPTION OCCUR? " +checkIfPreemptionHappened(processList));
+            if(checkIfPreemptionHappened(processList)){
+                Process preempted = processList.get(processList.size()- 2);
+                
+                System.out.println("PREEMPTED PROCESS: " +preempted.getProcessId());
+                
+//                findProcessAndPoll(entryQueue, preempted);
+//                System.out.println(p.getProcessId());
+//                
+                promoteProcess(entryQueue, findProcessAndPoll(entryQueue, preempted));
+//                Queues.arrangeProcessesOnQueue(entryQueue);
+            }
+            
             
             clockTime++;
         }
@@ -137,13 +160,13 @@ public class MFQS {
         for (int i = 0; i < Queues.systemQueues.length; i++) {
             if(!Queues.queue[i].isEmpty()){
                 p = Queues.queue[i].peek();
-                System.out.println("HIGHEST PRIORITY PROCESS: " +p.getProcessId() +" WITH " +p.getBurstTime() +" BURST TIME");
                 Queues.queue[i].peek().setBurstTime(Queues.queue[i].peek().getBurstTime()-1); //decrement by 1 burst time
                 
                 if(p.getBurstTime() == 0){
                     Queues.queue[i].poll();
                 }
                 
+                System.out.println("FROM QUEUE: " +i);
                 return p;
             }
         }
@@ -158,11 +181,8 @@ public class MFQS {
                 System.out.println("Process " + process.getProcessId() + " arrived!");
                 Queues.addProcessToQueue(entryQueue, process);
                 
-                if(checkWhereHighestProcess() <= entryQueue){
-                    //promotion
-                }
                 Queues.arrangeProcessesOnQueue(entryQueue);
-                
+
                 iterator.remove();
                 
                 
@@ -197,5 +217,52 @@ public class MFQS {
             Queues.addProcessToQueue(currentQueue+1, pToDemote);
         }
     }
-
+    
+    public static boolean checkIfPreemptionHappened(ArrayList<Process> processList){
+//        System.out.println("SIZE OF PROCESSLSIST: " +processList.size());
+        if(processList.size() <= 1){
+            return false;
+        }
+        else {
+            Process currentProcess = processList.get(processList.size()-1);
+            Process previousProcess = processList.get(processList.size()-2);
+            
+            if(previousProcess.getBurstTime() == 0){
+                return false;
+            }
+            
+            return !currentProcess.equals(previousProcess);
+        }
+    }
+    
+    public static Process findProcessAndPoll(int queueIndex, Process p){
+        if (!Queues.queue[queueIndex].isEmpty()) {
+            Iterator<Process> iterator = Queues.queue[queueIndex].iterator();
+            while (iterator.hasNext()) {
+                Process temp = iterator.next();
+                if (temp.equals(p)) {
+                    iterator.remove();
+                    System.out.println("Removed process with ID: " + temp.getProcessId());
+                    return temp;
+                }
+            }
+            
+//            System.out.println(Queues.queue[queueIndex].size());
+//            Queues.printProcessesOnQueue();
+//            for(int i = 0; i < Queues.queue[queueIndex].size(); i++) {
+//                
+//            }
+//            for(int i = 0; i < Queues.queue[queueIndex].size(); i++){
+//                System.out.println(Queues.queue[i].peek().getProcessId());
+////                Process pr = Queues.queue[i].peek();
+//                if(pr.equals(p)){
+//                    System.out.println("PROCESS FOUND! ON: " +i);
+//                    pr = Queues.queue[i].poll();
+//                    return pr;
+//                }
+//            }
+        }
+        System.out.println("NO PROCESS FOUND");
+        return null;
+    }
 }
