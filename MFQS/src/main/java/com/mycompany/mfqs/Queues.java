@@ -22,7 +22,7 @@ public class Queues {
     private final int queueId;
     private final int queueAlgorithm; 
     
-    private final int queueAllocation;
+    private int queueAllocation;
                   
     Queues (int queueId, int queueAlgorithm, int queueAllocation) {
         this.queueId = queueId;
@@ -227,6 +227,9 @@ public class Queues {
         return queueAllocation;
     }
     
+    public void setQueueAllocation(int queueAllocation){
+        this.queueAllocation = queueAllocation;
+    }
     public static boolean isEmpty() {
         for (Queue<Process> q : queue) {
             if (!q.isEmpty()) {
