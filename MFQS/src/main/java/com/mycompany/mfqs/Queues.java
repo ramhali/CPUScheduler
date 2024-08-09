@@ -21,10 +21,13 @@ public class Queues {
     
     private final int queueId;
     private final int queueAlgorithm; 
+    
+    private final int queueAllocation;
                   
-    Queues (int queueId, int queueAlgorithm) {
+    Queues (int queueId, int queueAlgorithm, int queueAllocation) {
         this.queueId = queueId;
         this.queueAlgorithm = queueAlgorithm;
+        this.queueAllocation = queueAllocation;
     }
     
     public static void initializeQueues(int size) {
@@ -65,47 +68,152 @@ public class Queues {
     
     //    public static void arrangeQueueOnAlgo()
     public static void arrangeProcessesOnQueue(int queueIndex){
-        List<Process> processList = new ArrayList<>(queue[queueIndex]);
-        int schedulingAlgorithm = systemQueues[queueIndex].getQueueAlgorithm();
-        
-        switch (schedulingAlgorithm) {
-            case 1 -> System.out.println("FCFS");
-            case 2 -> {
-                System.out.println("SJF");
-    
-//                Process p = removeFirstProcessFromQueue(queueIndex);
-//                
-//                System.out.println("ARE THE QUEUES EMPTY?" +isEmpty());
-//                
-//                processList.sort(new Comparator<Process>() {
-//                    @Override
-//                    public int compare(Process p1, Process p2) {
-//                        return Integer.compare(p1.getBurstTime(), p2.getBurstTime());
-//                    }
-//                }); queue[queueIndex].clear();
-//                while(!processList.isEmpty()){
-//                    addProcessToQueue(queueIndex, processList.remove(0));
-//                }
-//                
-////                queue[queueIndex].addFirst(current);
+        if(queueIndex < 0 || queueIndex > systemQueues.length-1){
+            if(queueIndex < 0 ){
+                arrangeProcessesOnQueue(0);
             }
-            
-            case 3 -> {
-                System.out.println("SJRF");
-                
-                processList.sort(new Comparator<Process>() {
-                    @Override
-                    public int compare(Process p1, Process p2) {
-                        return Integer.compare(p1.getBurstTime(), p2.getBurstTime());
-                    }
-                }); queue[queueIndex].clear();
-                while(!processList.isEmpty()){
-                    addProcessToQueue(queueIndex, processList.remove(0));
-                }
-            }
-            default -> {
+            else if(queueIndex > systemQueues.length-1){
+                arrangeProcessesOnQueue(systemQueues.length-1);
             }
         }
+        else {
+            List<Process> processList = new ArrayList<>(queue[queueIndex]);
+            int schedulingAlgorithm = systemQueues[queueIndex].getQueueAlgorithm();
+
+            switch (schedulingAlgorithm) {
+                case 1 -> {
+                    System.out.println("FCFS");
+                    
+                    Process currentProcess = null;
+                    
+                    if(!MFQS.runningProcessList.isEmpty()){
+                        if(MFQS.runningProcessList.getLast().getBurstTime() != 0 && MFQS.runningProcessList.getLast() == queue[queueIndex].peek()){
+//                            System.out.println("CURRENT PROCESS RUNNING IS FROM THIS QUEUE!");
+                            currentProcess = queue[queueIndex].poll();
+//                            System.out.println("POLLED FROM THE QUEUE: " +currentProcess.getProcessId());
+                            processList = new ArrayList<>(queue[queueIndex]);
+                        }
+                    }
+                    
+                    processList.sort(new Comparator<Process>() {
+                        @Override
+                        public int compare(Process p1, Process p2) {
+                            return Integer.compare(p1.getArrivalTime(), p2.getArrivalTime());
+                        }
+                    }); queue[queueIndex].clear();
+                    while(!processList.isEmpty()){
+                        addProcessToQueue(queueIndex, processList.remove(0));
+//                        System.out.println("FIRST ElEMETN AFTER SORTING: " +queue[queueIndex].peek().getProcessId());
+                    }
+                    
+                    if(currentProcess != null){
+//                        System.out.println(currentProcess.getProcessId() +" IS ADDED AT FRONT");
+                        queue[queueIndex].addFirst(currentProcess);
+                    }
+
+                }
+                
+                case 2 -> {
+                    System.out.println("SJF");
+                    
+                    Process currentProcess = null;
+                    
+                    if(!MFQS.runningProcessList.isEmpty()){
+                        if(MFQS.runningProcessList.getLast().getBurstTime() != 0 && MFQS.runningProcessList.getLast() == queue[queueIndex].peek()){
+//                            System.out.println("CURRENT PROCESS RUNNING IS FROM THIS QUEUE!");
+                            currentProcess = queue[queueIndex].poll();
+//                            System.out.println("POLLED FROM THE QUEUE: " +currentProcess.getProcessId());
+                            processList = new ArrayList<>(queue[queueIndex]);
+                        }
+                    }
+                    
+                    processList.sort(new Comparator<Process>() {
+                        @Override
+                        public int compare(Process p1, Process p2) {
+                            return Integer.compare(p1.getBurstTime(), p2.getBurstTime());
+                        }
+                    }); queue[queueIndex].clear();
+                    while(!processList.isEmpty()){
+                        addProcessToQueue(queueIndex, processList.remove(0));
+//                        System.out.println("FIRST ElEMETN AFTER SORTING: " +queue[queueIndex].peek().getProcessId());
+                    }
+                    
+                    if(currentProcess != null){
+//                        System.out.println(currentProcess.getProcessId() +" IS ADDED AT FRONT");
+                        queue[queueIndex].addFirst(currentProcess);
+                    }
+
+                }
+
+                case 3 -> {
+                    System.out.println("SJRF");
+
+                    processList.sort(new Comparator<Process>() {
+                        @Override
+                        public int compare(Process p1, Process p2) {
+                            return Integer.compare(p1.getBurstTime(), p2.getBurstTime());
+                        }
+                    }); queue[queueIndex].clear();
+                    while(!processList.isEmpty()){
+                        addProcessToQueue(queueIndex, processList.remove(0));
+                    }
+                    
+                    if(!MFQS.runningProcessList.isEmpty() && queue[queueIndex].peek().equals(MFQS.runningProcessList.getLast())){
+                        MFQS.runningTime = MFQS.countProcessAllocation(MFQS.runningTime); //reset runningTime
+                    }
+                } 
+                
+                case 4 -> {
+                    System.out.println("NONPREEMPTIVE PRIORITY");
+                    
+                    Process currentProcess = null;
+                    
+                    if(!MFQS.runningProcessList.isEmpty()){
+                        if(MFQS.runningProcessList.getLast().getBurstTime() != 0 && MFQS.runningProcessList.getLast() == queue[queueIndex].peek()){
+//                            System.out.println("CURRENT PROCESS RUNNING IS FROM THIS QUEUE!");
+                            currentProcess = queue[queueIndex].poll();
+//                            System.out.println("POLLED FROM THE QUEUE: " +currentProcess.getProcessId());
+                            processList = new ArrayList<>(queue[queueIndex]);
+                        }
+                    }
+                    
+                    processList.sort(new Comparator<Process>() {
+                        @Override
+                        public int compare(Process p1, Process p2) {
+                            return Integer.compare(p1.getPriority(), p2.getPriority());
+                        }
+                    }); queue[queueIndex].clear();
+                    while(!processList.isEmpty()){
+                        addProcessToQueue(queueIndex, processList.remove(0));
+//                        System.out.println("FIRST ElEMETN AFTER SORTING: " +queue[queueIndex].peek().getProcessId());
+                    }
+                    
+                    if(currentProcess != null){
+//                        System.out.println(currentProcess.getProcessId() +" IS ADDED AT FRONT");
+                        queue[queueIndex].addFirst(currentProcess);
+                    }
+
+                }
+                
+                case 5 -> {
+                    System.out.println("PREEMPTIVE PRIORITY");
+
+                    processList.sort(new Comparator<Process>() {
+                        @Override
+                        public int compare(Process p1, Process p2) {
+                            return Integer.compare(p1.getPriority(), p2.getPriority());
+                        }
+                    }); queue[queueIndex].clear();
+                    while(!processList.isEmpty()){
+                        addProcessToQueue(queueIndex, processList.remove(0));
+                    }
+                }
+                
+                default -> {
+                }
+            }
+        }
+        
         
     }
     
@@ -114,6 +222,9 @@ public class Queues {
     }
     public int getQueueAlgorithm(){
         return queueAlgorithm;
+    }
+    public int getQueueAllocation(){
+        return queueAllocation;
     }
     
     public static boolean isEmpty() {
