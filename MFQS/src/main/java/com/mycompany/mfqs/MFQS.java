@@ -116,6 +116,7 @@ public class MFQS {
         System.out.println();
         
         int clockTime = 1;
+        boolean wronglyDemoted;
         
         while(!Process.processList.isEmpty() || !Queues.isEmpty()) {
             System.out.println("Clock Time: " +clockTime);
@@ -123,6 +124,7 @@ public class MFQS {
             getArrivedProcesses(entryQueue, clockTime); //also arranges the queue based on algorithm
             
             Process currentProcess = checkFromAbove();
+            wronglyDemoted = false;
             if(currentProcess != null){ //add process to the currentList
                 if(!runningProcessList.contains(currentProcess)){ // set start time
                     currentProcess.setStartTime(clockTime);
@@ -132,7 +134,7 @@ public class MFQS {
                 runningProcessList.add(currentProcess); //add process to current running list
                 
                 if(currentProcess.getBurstTime() == 0){
-                    System.out.println("PROCESS IS FNISHING NOW");
+//                    System.out.println("PROCESS IS FNISHING NOW");
                     int index = Process.processListAfter.indexOf(currentProcess);
                     
                     Process.processListAfter.get(index).setCompletionTime(clockTime);
@@ -148,11 +150,29 @@ public class MFQS {
                 if(runningProcessList.get(runningProcessList.size()-1).getProcessId() >= 0){ //check if there is process running
                     System.out.println("HIGHEST PRIORITY PROCESS: " +runningProcessList.get(runningProcessList.size()-1).getProcessId() +" WITH " +runningProcessList.get(runningProcessList.size()-1).getBurstTime() +" BURST TIME LEFT");
                 }
+                
+                if(runningProcessList.size() >= 4 && runningProcessList.get(runningProcessList.size()-2).getProcessId() == -2
+                        && (!runningProcessList.get(runningProcessList.size()-1).equals(runningProcessList.get(runningProcessList.size()-3)))){ //the preempted process is not to be demoted but promoted instead
+                    
+                    Process preempted = runningProcessList.get(runningProcessList.size()- 3); //3rd to the last process is wrongly demoted
+                    promoteProcess(entryQueue, findProcessAndPoll(preempted));
+                    Queues.arrangeProcessesOnQueue(entryQueue-1);
+                    
+                    wronglyDemoted = true;
+                    
+                }
             }
             
-//            System.out.println("DID PREEMPTION OCCUR? " +checkIfPreemptionHappened(processList));
-            if(checkIfPreemptionHappened(runningProcessList)){
-                Process preempted = runningProcessList.get(runningProcessList.size()- 2); //2nd to the last is the preempted
+            System.out.println("DID PREEMPTION OCCUR? " +checkIfPreemptionHappened(runningProcessList));
+            System.out.println("WAS THE PROCESS DEMOTED? " +wronglyDemoted);
+            if(checkIfPreemptionHappened(runningProcessList) || wronglyDemoted){
+                Process preempted;
+                if(wronglyDemoted){
+                    preempted = runningProcessList.get(runningProcessList.size()- 1); //last is the preempted
+                }
+                else{
+                    preempted = runningProcessList.get(runningProcessList.size()- 2); //2nd to the last is the preempted
+                }
                 
                 System.out.println("PREEMPTED PROCESS: " +preempted.getProcessId());
                 
@@ -178,8 +198,12 @@ public class MFQS {
         int currentQueue = 0;
         int allocationCounter = 0;
         
-        boolean currentQueueChecker = false;
-        boolean preEmpted;
+        int beforeQueue = 0;
+        
+//        boolean currentQueueChecker = false;
+        boolean preEmpted = false;
+        boolean recentlyPreEmpted;
+        int first = Process.processList.get(0).getArrivalTime();
         
         while(!Process.processList.isEmpty() || !Queues.isEmpty()) {
             System.out.println();
@@ -189,21 +213,39 @@ public class MFQS {
             for(int i = 0; i < Queues.systemQueues.length; i++){
                 Queues.systemQueues[i].setQueueAllocation(3-i);
             }
-
-            if(!currentQueueChecker){
-                currentQueue = checkWhereHighestProcess();
-                allocationCounter = 0;
-            }
+    
+            System.out.println(first);
+            
+//            if(clockTime == first){
+//                currentQueue = 0;
+//                allocationCounter = 0;
+//            }
+            System.out.println("CURRENT QUEUE: " +currentQueue);
+//            else{
+//                System.out.println("PLAYING FROM QUEUE: " +currentQueue +" WITH ALLOCATION " +Queues.systemQueues[currentQueue].getQueueAllocation());
+//            }
+//            if(!currentQueueChecker){
+//                currentQueue = checkWhereHighestProcess();
+//                allocationCounter = 0;
+//            }
            
             Process currentProcess = checkForAllocation(currentQueue);
+            if(currentProcess == null){
+                System.out.println("CURRENT PROCESS IS NULL");
+            }
+            else {
+                System.out.println("PROCESS " +currentProcess.getProcessId() +" FROM QYEYE " +currentQueue);
+            }
+            
             
 //            if(currentQueueChecker){
 //                System.out.println("PLAYING FROM QUEUE: " +currentQueue +" WITH ALLOCATION " +Queues.systemQueues[currentQueue].getQueueAllocation());
 //            }
             
             allocationCounter++; //increment by 1
-//            System.out.println("ALLOCTAION: " +allocationCounter);
+            System.out.println("ALLOCTAION: " +allocationCounter);
             
+            recentlyPreEmpted = preEmpted;
             preEmpted = false;
             
             if(currentQueue != -1){
@@ -212,16 +254,18 @@ public class MFQS {
                     System.out.println("ALLOCATION UP!");
                     allocationCounter = 0;
 
-                    Process preempted = runningProcessList.get(runningProcessList.size()- 1);
+//                    Process preempted = runningProcessList.get(runningProcessList.size()- 1);
 //                    System.out.println("PROCESS PREEMPTED LAST ELEMENT ON PRLCESS LIST: " +preempted.getProcessId());
+//
+//                    Process temp = findProcessAndPoll(preempted);
+//
+//                    if(temp != null){
+//                        demoteProcess(currentQueue, temp);
+//                        Queues.arrangeProcessesOnQueue(currentQueue+1);
+//                    }
 
-                    Process temp = findProcessAndPoll(preempted);
-
-                    if(temp != null){
-                        demoteProcess(currentQueue, temp);
-                        Queues.arrangeProcessesOnQueue(currentQueue+1);
-                    }
-
+                    beforeQueue = currentQueue; //to be used for demotion
+                    
                     //go to nextQueue
                     if(currentQueue >= Queues.systemQueues.length-1){
                         currentQueue = 0;
@@ -230,35 +274,53 @@ public class MFQS {
                         currentQueue++;
                     }
 
-    //                System.out.println(preempted.getProcessId());
+                    
+//                    System.out.println("PLAYING FROM QUEUE  " +currentQueue);
     //                runningProcessList.add(new Process(-1, -1, -1, -1)); //dummy, for no process available on current clock time
     ////                System.out.println("CURRENT PROCESS" +runningProcessList.get(runningProcessList.size()-1).getProcessId());
     ////                System.out.println("CURRENT PROCESS" +runningProcessList.get(runningProcessList.size()-2).getProcessId());
 
     //                Queues.arrangeProcessesOnQueue(currentQueue-1);
+//    System.out.println("GET BURST TIME: " +runningProcessList.get(runningProcessList.size()-1).getBurstTime());
                     preEmpted = true;
+                    
                 }
-                currentQueueChecker = true; //the system is already running
+//                currentQueueChecker = true; //the system is already running
             }
             
             
             if(currentProcess != null){ //add process to the currentList
-                runningProcessList.add(currentProcess);
+                if(!runningProcessList.contains(currentProcess)){ // set start time
+                    currentProcess.setStartTime(clockTime);
+                    Process.processListAfter.add(currentProcess);
+                }
+                runningProcessList.add(currentProcess); //add process to current running list
             }
             else {
-                runningProcessList.add(new Process(-1, -1, -1, -1)); //dummy, for no process available on current clock time
+                runningProcessList.add(new Process(-1,-1,-1,-1)); //for no available process
             }
             
-            
             if(!runningProcessList.isEmpty()){              
-                if(runningProcessList.get(runningProcessList.size()-1).getProcessId() != -1){ //check if there is process running
+                if(runningProcessList.get(runningProcessList.size()-1).getProcessId() >= 0){ //check if there is process running
                     System.out.println("HIGHEST PRIORITY PROCESS: " +runningProcessList.get(runningProcessList.size()-1).getProcessId() +" WITH " +runningProcessList.get(runningProcessList.size()-1).getBurstTime() +" BURST TIME LEFT");
                 }
             }
             
-//            System.out.println("DID PREEMPTION OCCUR? " +checkIfPreemptionHappened(runningProcessList));
-//            System.out.println("PROCESS PREEMPTED? " +preEmpted);
-            if(checkIfPreemptionHappened(runningProcessList)){
+            if(currentProcess != null){
+                if(currentProcess.getBurstTime() == 0){
+//                    System.out.println("PROCESS IS FNISHING NOW");
+                    int index = Process.processListAfter.indexOf(currentProcess);
+                    
+                    Process.processListAfter.get(index).setCompletionTime(clockTime);
+                    if(runningProcessList.get(runningProcessList.size()-2).getProcessId() == -2){
+                        runningProcessList.add(new Process(-2, -2, -2, -2)); //avoid printing if the process is already expired
+                    }
+                }
+            }
+            
+            System.out.println("DID PREEMPTION OCCUR? " +checkIfPreemptionHappened(runningProcessList));
+            System.out.println("PROCESS PREEMPTED? " +preEmpted);
+            if(checkIfPreemptionHappened(runningProcessList) && !recentlyPreEmpted){
                 Process preempted = runningProcessList.get(runningProcessList.size()- 2); //2nd to the last is the preempted
                 
 //                System.out.println("PREEMPTED PROCESS: " +preempted.getProcessId());
@@ -267,13 +329,28 @@ public class MFQS {
 //                System.out.println(p.getProcessId());
 //                
                 promoteProcess(entryQueue, findProcessAndPoll(preempted));
-                runningTime = countProcessAllocation(runningTime);
-                System.out.println(entryQueue);
+//                runningTime = countProcessAllocation(runningTime);
+//                System.out.println(entryQueue);
                 Queues.arrangeProcessesOnQueue(entryQueue-1);
             }
             
-            if(preEmpted){
-                runningProcessList.add(new Process(-1, -1, -1, -1)); //dummy, avoid being flagged for preempted
+            if(preEmpted && !runningProcessList.isEmpty()){
+                Process preempted = runningProcessList.get(runningProcessList.size()- 1);
+                    System.out.println("PROCESS PREEMPTED LAST ELEMENT ON PRLCESS LIST: " +preempted.getProcessId() +" WITH BURST TIME " +preempted.getBurstTime());
+
+                    Process temp = findProcessAndPoll(preempted);
+
+                    System.out.println("CURRENT QUEUE: " +currentQueue);
+                    System.out.println("BEFORE QUEUE: " +beforeQueue);
+                    
+                    if(temp != null && preempted.getBurstTime() > 0){
+                        demoteProcess(beforeQueue, temp);
+                        Queues.arrangeProcessesOnQueue(beforeQueue+1);
+                        
+                    }   
+                    if(preempted.getBurstTime() == 0){
+                        runningProcessList.add(new Process(-2, -2, -2, -2));
+                    }                    
             }
             
             clockTime++;
@@ -333,25 +410,25 @@ public class MFQS {
         
         for (int i = 0; i < Queues.systemQueues.length; i++) {
             if(!Queues.queue[i].isEmpty()){
-//                System.out.println("ALLOCATION OF QUEUE: " +Queues.systemQueues[i].getQueueAllocation());
+                System.out.println("ALLOCATION OF QUEUE: " +Queues.systemQueues[i].getQueueAllocation());
                 
                 p = Queues.queue[i].peek();
                 Queues.queue[i].peek().setBurstTime(Queues.queue[i].peek().getBurstTime()-1); //decrement by 1 burst time
                 
                 runningTime = countProcessAllocation(runningTime);
-//                System.out.println("RUNNING TIME: " +runningTime);
+                System.out.println("RUNNING TIME: " +runningTime);
                 
                 if(runningTime >= Queues.systemQueues[i].getQueueAllocation()-1){
-//                    System.out.println("PROCESS SHOULD BE DEMOTED");
-//                    System.out.println(Queues.systemQueues[i].getQueueIndex());
+                    System.out.println("PROCESS SHOULD BE DEMOTED");
+                    System.out.println(Queues.systemQueues[i].getQueueIndex());
                     demoteProcess(Queues.systemQueues[i].getQueueIndex()-1, findProcessAndPoll(runningProcessList.get(runningProcessList.size()-1)));
                     Queues.arrangeProcessesOnQueue(Queues.systemQueues[i].getQueueIndex());
                     
 //                    Queues.printProcessesOnQueue();
                     
                     runningProcessList.add(new Process(-2, -2, -2, -2)); //dummy, to avoid being flagged for preemption
-                    runningTime = countProcessAllocation(runningTime)+1; //reset allocation counter
-                    
+                    runningTime = -1; //reset allocation counter
+//                    System.out.println("RUNNING TIME: " +runningTime);
 //                    System.out.println("LAST TWO PROCESSES: " +runningProcessList.get(runningProcessList.size()-2).getProcessId() +" " +runningProcessList.get(runningProcessList.size()-1).getProcessId());
                 }
                 

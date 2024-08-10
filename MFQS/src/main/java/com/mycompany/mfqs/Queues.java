@@ -87,7 +87,7 @@ public class Queues {
                     Process currentProcess = null;
                     
                     if(!MFQS.runningProcessList.isEmpty()){
-                        if(MFQS.runningProcessList.getLast().getBurstTime() != 0 && MFQS.runningProcessList.getLast() == queue[queueIndex].peek()){
+                        if(MFQS.runningProcessList.get(MFQS.runningProcessList.size()-1).getBurstTime() != 0 && MFQS.runningProcessList.get(MFQS.runningProcessList.size()-1) == queue[queueIndex].peek()){
 //                            System.out.println("CURRENT PROCESS RUNNING IS FROM THIS QUEUE!");
                             currentProcess = queue[queueIndex].poll();
 //                            System.out.println("POLLED FROM THE QUEUE: " +currentProcess.getProcessId());
@@ -119,7 +119,7 @@ public class Queues {
                     Process currentProcess = null;
                     
                     if(!MFQS.runningProcessList.isEmpty()){
-                        if(MFQS.runningProcessList.getLast().getBurstTime() != 0 && MFQS.runningProcessList.getLast() == queue[queueIndex].peek()){
+                        if(MFQS.runningProcessList.get(MFQS.runningProcessList.size()-1).getBurstTime() != 0 && MFQS.runningProcessList.get(MFQS.runningProcessList.size()-1) == queue[queueIndex].peek()){
 //                            System.out.println("CURRENT PROCESS RUNNING IS FROM THIS QUEUE!");
                             currentProcess = queue[queueIndex].poll();
 //                            System.out.println("POLLED FROM THE QUEUE: " +currentProcess.getProcessId());
@@ -158,7 +158,7 @@ public class Queues {
                         addProcessToQueue(queueIndex, processList.remove(0));
                     }
                     
-                    if(!MFQS.runningProcessList.isEmpty() && queue[queueIndex].peek().equals(MFQS.runningProcessList.getLast())){
+                    if(!MFQS.runningProcessList.isEmpty() && queue[queueIndex].peek().equals(MFQS.runningProcessList.get(MFQS.runningProcessList.size()-1))){
                         MFQS.runningTime = MFQS.countProcessAllocation(MFQS.runningTime); //reset runningTime
                     }
                 } 
@@ -169,7 +169,7 @@ public class Queues {
                     Process currentProcess = null;
                     
                     if(!MFQS.runningProcessList.isEmpty()){
-                        if(MFQS.runningProcessList.getLast().getBurstTime() != 0 && MFQS.runningProcessList.getLast() == queue[queueIndex].peek()){
+                        if(MFQS.runningProcessList.get(MFQS.runningProcessList.size()-1).getBurstTime() != 0 && MFQS.runningProcessList.get(MFQS.runningProcessList.size()-1) == queue[queueIndex].peek()){
 //                            System.out.println("CURRENT PROCESS RUNNING IS FROM THIS QUEUE!");
                             currentProcess = queue[queueIndex].poll();
 //                            System.out.println("POLLED FROM THE QUEUE: " +currentProcess.getProcessId());
